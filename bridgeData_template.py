@@ -18,7 +18,7 @@ max_threads = 1
 # We will keep this many requests in the queue so we can start working as soon as a thread is available
 # Recommended to keep no higher than 1
 queue_size = 0
-# If set to True, this worker will not only pick up jobs where the user has the required kudos upfront.
+# If set to True, this worker will not only pick up jobs where the user has the required kudos upfront. 
 # Effectively this will exclude all anonymous accounts, and registered accounts who haven't contributed.
 # Users in priority_usernames and trusted users will bypass this restriction
 require_upfront_kudos = False
@@ -46,13 +46,13 @@ allow_img2img = True
 allow_painting = True
 # If set to False, this worker will no longer pick img2img jobs from unsafe IPs
 allow_unsafe_ip = True
-# If set to False, this worker will not load post-processors like Codeformers and will not pick up jobs which require post-processing
+# If set to False, this worker will not load post-processors like Codeformers and will not pick up jobs which require post-processing 
 # In the future this will be adjusted so that post-processing can be split from image generation
 allow_post_processing = True
 # If set to True, this worker start picking up ControlNet jobs
-# ControlNet is really heavy and requires a good GPU with at least 12G VRAM to run.
+# ControlNet is really heavy and requires a good GPU with at least 12G VRAM to run. 
 # If your controlnet jobs crash by running out of CUDA VRAM, set this to false
-allow_controlnet = False  # needs at least 12G VRAM
+allow_controlnet = False # needs at least 12G VRAM
 # Set to False to prevent this worker from reading the Horde model queue and loading models which are under load
 dynamic_models = True
 # Adjust how many models to load into memory. In future this will likely be an argument for memory size or may disappear, but for right now, I'm lazy
@@ -71,7 +71,7 @@ max_models_to_download = 10
 # So your total list will be your specific models + the dynamic models
 # in that case, keep this list short, preferrably to only a few more obscure models you'd like to always see available
 models_to_load = [
-    "stable_diffusion_2.1",  # This is the standard compvis model. It is not using Diffusers (yet)
+    "stable_diffusion_2.1", # This is the standard compvis model. It is not using Diffusers (yet)
     "stable_diffusion",  # This is the standard compvis model. It is not using Diffusers (yet)
     ## Specialized Style models:
     # "Anything Diffusion",
@@ -103,6 +103,6 @@ models_to_skip = [
 # The interrogation forms this worker can serve.
 forms = [
     "caption",
-    "nsfw",  # uses CPU
+    "nsfw", # uses CPU
     # "interrogation", # Heavier than the others, but rewards more kudos
 ]

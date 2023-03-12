@@ -109,15 +109,16 @@ class StableDiffusionBridgeData(BridgeDataTemplate):
             "https://raw.githubusercontent.com/db0/AI-Horde-image-model-reference/main/stable_diffusion.json"
         ).json()
 
-        models = [
-            model["name"]
-            for _, model in data.items()
+        # get all interesting models
+        models = []
+        for _, model in data.items():
             if (
                 model["name"] not in ["stable_diffusion_1.4", "safety_checker", "LDSR"]
                 and model["name"] not in self.models_to_skip
                 and model["type"] == "ckpt"
-            )
-        ]
+            ):
+                models.append(model["name"])
+
         models = sorted(list(set(models)))
         # Move the standard SD model to the top of the list
         if "stable_diffusion" in models:

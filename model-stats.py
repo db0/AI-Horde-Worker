@@ -82,12 +82,18 @@ class LogStats:
             self.download_stats("month")
             return
 
-        total_log_lines = sum(self.get_num_lines(logfile) for logfile in glob.glob(self.logfile))
+        # Identify all log files and total number of log lines
+        total_log_lines = 0
+        for logfile in glob.glob(self.logfile):
+            total_log_lines += self.get_num_lines(logfile)
+
         progress = tqdm(total=total_log_lines, leave=True, unit=" lines", unit_scale=True)
         for logfile in glob.glob(self.logfile):
             with open(logfile, "rt", encoding="UTF-8", errors="ignore") as infile:
                 for line in infile:
-                    if regex := REGEX.match(line):
+                    # Grab the lines we're interested in for models
+                    regex = REGEX.match(line)
+                    if regex:
                         if self.period in [PERIOD_TODAY, PERIOD_YESTERDAY] and regex.group(1) != self.get_date():
                             continue
                         # Extract model name
@@ -103,7 +109,10 @@ class LogStats:
                         else:
                             self.used_models[model] = 1
 
-                    if regex := KUDOS_REGEX.match(line):
+                    # Grab kudos lines
+                    # Grab the lines we're interested in
+                    regex = KUDOS_REGEX.match(line)
+                    if regex:
                         # Extract kudis and time
                         timestamp = regex.group(1)[:-2]  # truncate to hour
                         kudos = regex.group(2)
@@ -126,16 +135,19 @@ class LogStats:
             return
 
         # Whats our longest model name?
-        max_len = max(len(x) for x in self.used_models)
+        max_len = max([len(x) for x in self.used_models])
 
-        scores = sorted(
-            ((self.used_models[model], model) for model in self.used_models),
-            reverse=True,
-        )
-        total = sum(count for count, name in scores)
-        for j, (count, name) in enumerate(scores, start=1):
+        scores = sorted(((self.used_models[model], model) for model in self.used_models), reverse=True)
+        total = 0
+        for count, name in scores:
+            total += count
+
+        j = 1
+        for count, name in scores:
             perc = round((count / total) * 100, 1)
             print(f"{j:>2}. {name:<{max_len}} {perc}% ({count})")
+            j += 1
+
         print()
         if self.unused_models:
             print("The following models were not used at all:")
@@ -148,29 +160,11 @@ class LogStats:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate local worker or horde model usage statistics")
     parser.add_argument("-t", "--today", help="Local statistics for today only", action="store_true")
+    parser.add_argument("-y", "--yesterday", help="Local statistics for yesterday only", action="store_true")
+    parser.add_argument("-d", "--horde", help="Show statistics for the entire horde for the day", action="store_true")
+    parser.add_argument("-k", "--kudos", help="Show statistics for the kudos per hour", action="store_true")
     parser.add_argument(
-        "-y",
-        "--yesterday",
-        help="Local statistics for yesterday only",
-        action="store_true",
-    )
-    parser.add_argument(
-        "-d",
-        "--horde",
-        help="Show statistics for the entire horde for the day",
-        action="store_true",
-    )
-    parser.add_argument(
-        "-k",
-        "--kudos",
-        help="Show statistics for the kudos per hour",
-        action="store_true",
-    )
-    parser.add_argument(
-        "-m",
-        "--hordemonth",
-        help="Show statistics for the entire horde for the month",
-        action="store_true",
+        "-m", "--hordemonth", help="Show statistics for the entire horde for the month", action="store_true"
     )
     args = vars(parser.parse_args())
 

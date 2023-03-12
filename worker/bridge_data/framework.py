@@ -58,6 +58,7 @@ class BridgeDataTemplate:
                 for key, value in config.items():
                     setattr(self, key, value)
             return True  # loaded
+        # fall back to try old python bridge data
         elif os.path.exists("bridgeData.py"):
             try:
                 import bridgeData as bd
@@ -65,12 +66,7 @@ class BridgeDataTemplate:
                 importlib.reload(bd)
                 for key, value in vars(bd).items():
                     # Only allow these data types
-                    if key.startswith("__") or type(value) not in [
-                        str,
-                        int,
-                        bool,
-                        list,
-                    ]:
+                    if key.startswith("__") or type(value) not in [str, int, bool, list]:
                         continue
                     setattr(self, key, value)
 
@@ -78,27 +74,19 @@ class BridgeDataTemplate:
                 config = {}
                 for key, value in vars(self).items():
                     # Only allow these data types
-                    if key.startswith("__") or type(value) not in [
-                        str,
-                        int,
-                        bool,
-                        list,
-                    ]:
+                    if key.startswith("__") or type(value) not in [str, int, bool, list]:
                         continue
                     config[key] = value
                 with open(BRIDGE_CONFIG_FILE, "wt", encoding="utf-8") as configfile:
                     yaml.safe_dump(config, configfile)
                 try:
                     os.rename("bridgeData.py", "bridgeData.py-old")
-                except OSError:
+                except (FileExistsError, PermissionError, OSError):
                     logger.warning("Could not move old bridgeData.py config to archive.")
 
                 return True  # loaded
             except (ImportError, AttributeError) as err:
-                logger.warning(
-                    "bridgeData.py could not be loaded. Using defaults with anonymous account - {}",
-                    err,
-                )
+                logger.warning("bridgeData.py could not be loaded. Using defaults with anonymous account - {}", err)
 
     @logger.catch(reraise=True)
     def reload_data(self):
@@ -122,13 +110,14 @@ class BridgeDataTemplate:
         if not self.initialized or previous_api_key != self.api_key:
             try:
                 user_req = requests.get(
-                    f"{self.horde_url}/api/v2/find_user",
+                    self.horde_url + "/api/v2/find_user",
                     headers={"apikey": self.api_key},
                     timeout=10,
                 )
                 user_req = user_req.json()
                 self.username = user_req["username"]
 
+            # pylint: disable=broad-except
             except Exception:
                 logger.warning(f"Server {self.horde_url} error during find_user. Setting username 'N/A'")
                 self.username = "N/A"
@@ -241,7 +230,7 @@ class BridgeDataTemplate:
                 model_manager.unload_model(model)
         for model in self.model_names:
             if model not in model_manager.get_loaded_models_names():
-                success = model_manager.load(model, voodoo=not self.disable_voodoo.active)
+                success = model_manager.load(model, voodoo=False if self.disable_voodoo.active else True)
                 if not success:
                     logger.init_err(f"{model}", status="Error")
             self.initialized = True
