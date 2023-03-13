@@ -47,6 +47,13 @@ class StableDiffusionWorker(WorkerFramework):
         total_models = self.bridge_data.predefined_models.copy()
         new_dynamic_models = []
         running_models = self.get_running_models()
+        # Sometimes a dynamic model is wwaiting in the queue,
+        # and we do not wan to unload it
+        # However we also don't want to keep it loaded
+        # + the full amount of dynamic models
+        # as we may run out of RAM/VRAM.
+        # So we reduce the amount of dynamic models
+        # based on how many previous dynamic models we need to keep loaded
         needed_previous_dynamic_models = sum(
             model_name not in self.bridge_data.predefined_models for model_name in running_models
         )

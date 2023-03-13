@@ -59,9 +59,11 @@ class StableDiffusionBridgeData(BridgeDataTemplate):
         # Check for magic constants and expand them
         top_n = 0
         for model in self.models_to_load[:]:
+            # all models
             if match := re.match(r"ALL ((\w*) )?MODELS", model, re.IGNORECASE):
                 self.models_to_load = self.get_all_models(match[2])
                 break  # can't be more
+            # top n
             if match := re.match(r"TOP (\d+)", model, re.IGNORECASE):
                 self.models_to_load.remove(model)
                 if int(match[1]) > 0:

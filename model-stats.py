@@ -82,11 +82,13 @@ class LogStats:
             self.download_stats("month")
             return
 
+        # Identify all log files and total number of log lines
         total_log_lines = sum(self.get_num_lines(logfile) for logfile in glob.glob(self.logfile))
         progress = tqdm(total=total_log_lines, leave=True, unit=" lines", unit_scale=True)
         for logfile in glob.glob(self.logfile):
             with open(logfile, "rt", encoding="UTF-8", errors="ignore") as infile:
                 for line in infile:
+                    # Grab the lines we're interested in for models
                     if regex := REGEX.match(line):
                         if self.period in [PERIOD_TODAY, PERIOD_YESTERDAY] and regex.group(1) != self.get_date():
                             continue
@@ -103,6 +105,8 @@ class LogStats:
                         else:
                             self.used_models[model] = 1
 
+                    # Grab kudos lines
+                    # Grab the lines we're interested in
                     if regex := KUDOS_REGEX.match(line):
                         # Extract kudis and time
                         timestamp = regex.group(1)[:-2]  # truncate to hour

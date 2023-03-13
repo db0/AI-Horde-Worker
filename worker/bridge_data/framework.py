@@ -58,7 +58,8 @@ class BridgeDataTemplate:
                 for key, value in config.items():
                     setattr(self, key, value)
             return True  # loaded
-        elif os.path.exists("bridgeData.py"):
+        # fall back to try old python bridge data        
+        if os.path.exists("bridgeData.py"):
             try:
                 import bridgeData as bd
 

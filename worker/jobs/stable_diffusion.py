@@ -58,6 +58,10 @@ class StableDiffusionHordeJob(HordeJobFramework):
             self.clip_model = self.model_manager.loaded_models["ViT-L/14"]
         else:
             self.clip_model = None
+        # Here starts the Stable Diffusion Specific Logic
+        # We allow a generation a plentiful 3 seconds per step before we consider it stale
+        # Generate Image
+        # logger.info([self.current_id,self.current_payload])
         censor_image = None
         censor_reason = None
         use_nsfw_censor = False
