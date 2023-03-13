@@ -239,8 +239,7 @@ def check_for_csam(clip_model, image, prompt):
                 similarity_result[weight] -= 0.005
     prompt_tweaks = {}
     for entry in PROMPT_BOOSTS:
-        prompt_re = entry["regex"].search(prompt)
-        if prompt_re:
+        if prompt_re := entry["regex"].search(prompt):
             for adjust_word in entry["adjustments"]:
                 #  The below prevents us from increasing the plural and the singlar above the threshold
                 # due to the boost. This prevents us from hitting the threshold with something like
@@ -252,8 +251,6 @@ def check_for_csam(clip_model, image, prompt):
                 prompt_tweaks[adjust_word].append(prompt_re.group())
                 similarity_result[adjust_word] += entry["adjustments"][adjust_word]
     poc_elapsed_time = time.time() - poc_start
-    is_csam = False
-    found_uc = []
     # For some reason clip associates infant with pregnant women a lot.
     # So to avoid censoring pregnant women, when they're drawn we reduce
     # the weight of "infant"
@@ -268,54 +265,52 @@ def check_for_csam(clip_model, image, prompt):
                 if adjust_word not in adjustments:
                     adjustments[adjust_word] = []
                 adjustments[adjust_word].append(control_word)
-    for u_c in UNDERAGE_CONTEXT:
-        if similarity_result[u_c] > UNDERAGE_CONTEXT[u_c]:
-            found_uc.append(
-                {
-                    "word": u_c,
-                    "similarity": similarity_result[u_c],
-                    "threshold": UNDERAGE_CONTEXT[u_c],
-                    "prompt_tweaks": prompt_tweaks.get(u_c),
-                    "adjustments": adjustments.get(u_c),
-                }
-            )
+    found_uc = [
+        {
+            "word": u_c,
+            "similarity": similarity_result[u_c],
+            "threshold": UNDERAGE_CONTEXT[u_c],
+            "prompt_tweaks": prompt_tweaks.get(u_c),
+            "adjustments": adjustments.get(u_c),
+        }
+        for u_c in UNDERAGE_CONTEXT
+        if similarity_result[u_c] > UNDERAGE_CONTEXT[u_c]
+    ]
     # When the value for some underage context is too high, it goes critical and we triple the suspicion
     for u_c in UNDERAGE_CRITICAL:
         if similarity_result[u_c] > UNDERAGE_CRITICAL[u_c]:
-            found_uc.append(
-                {
-                    "word": u_c,
-                    "similarity": similarity_result[u_c],
-                    "threshold": UNDERAGE_CRITICAL[u_c],
-                    "prompt_tweaks": prompt_tweaks.get(u_c),
-                    "adjustments": adjustments.get(u_c),
-                    "critical": True,
-                }
+            found_uc.extend(
+                (
+                    {
+                        "word": u_c,
+                        "similarity": similarity_result[u_c],
+                        "threshold": UNDERAGE_CRITICAL[u_c],
+                        "prompt_tweaks": prompt_tweaks.get(u_c),
+                        "adjustments": adjustments.get(u_c),
+                        "critical": True,
+                    },
+                    {
+                        "word": u_c,
+                        "similarity": similarity_result[u_c],
+                        "threshold": UNDERAGE_CRITICAL[u_c],
+                        "prompt_tweaks": prompt_tweaks.get(u_c),
+                        "adjustments": adjustments.get(u_c),
+                        "critical": True,
+                    },
+                )
             )
-            found_uc.append(
-                {
-                    "word": u_c,
-                    "similarity": similarity_result[u_c],
-                    "threshold": UNDERAGE_CRITICAL[u_c],
-                    "prompt_tweaks": prompt_tweaks.get(u_c),
-                    "adjustments": adjustments.get(u_c),
-                    "critical": True,
-                }
-            )
-    found_lewd = []
-    for l_c in LEWD_CONTEXT:
-        if similarity_result[l_c] > LEWD_CONTEXT[l_c]:
-            found_lewd.append(
-                {
-                    "word": l_c,
-                    "similarity": similarity_result[l_c],
-                    "threshold": LEWD_CONTEXT[l_c],
-                    "prompt_tweaks": prompt_tweaks.get(l_c),
-                    "adjustments": adjustments.get(l_c),
-                }
-            )
-    if len(found_uc) >= 3 and len(found_lewd) >= 1:
-        is_csam = True
+    found_lewd = [
+        {
+            "word": l_c,
+            "similarity": similarity_result[l_c],
+            "threshold": LEWD_CONTEXT[l_c],
+            "prompt_tweaks": prompt_tweaks.get(l_c),
+            "adjustments": adjustments.get(l_c),
+        }
+        for l_c in LEWD_CONTEXT
+        if similarity_result[l_c] > LEWD_CONTEXT[l_c]
+    ]
+    is_csam = bool(len(found_uc) >= 3 and found_lewd)
     logger.info(f"Similarity Result after {poc_elapsed_time} seconds - Result = {is_csam}")
     return is_csam, similarity_result, {"found_uc": found_uc, "found_lewd": found_lewd}
 
